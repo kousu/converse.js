@@ -30,14 +30,19 @@
         theme: 'nordic',
         dark_theme: 'dracula',
         auto_away: 300,
-        loglevel: 'debug',
+        auto_login: true,
+        authentication: 'login', // this will be contourned by the localStorage code in Strophe; but it needs to be here to trigger auth
+        jid: 'user1@xmpp.kousu.ca',
+        password: 'badjunkpassword',
+        loglevel: 'info',
         show_background: true,
         message_archiving: 'always',
         muc_show_logs_before_join: true,
         notify_all_room_messages: ['discuss@conference.conversejs.org'],
         fetch_url_headers: true,
         whitelisted_plugins: ['converse-debug'],
-        bosh_service_url: 'https://conversejs.org/http-bind/', // Please use this connection manager only for testing purposes
+        //bosh_service_url: 'https://conversejs.org/http-bind/', // Please use this connection manager only for testing purposes
+        "bosh_service_url":"https://xmpp.kousu.ca/http-bind",
         // view_mode: 'overlayed',
         show_controlbox_by_default: true,
         // websocket_url: 'wss://conversejs.org/xmpp-websocket',
