@@ -400,7 +400,7 @@ export class Connection extends Strophe.Connection {
                 condition = __('Your XMPP address and/or password is incorrect. Please try again.');
             }
             this.setConnectionStatus(status, condition);
-            this.setDisconnectionCause(status, condition, true);
+            this.setDisconnectionCause(status, condition, true); // XXX DISABLE this to enable SASL fallback
             this.onDisconnected();
 
         } else if (status === Strophe.Status.CONNFAIL) {
