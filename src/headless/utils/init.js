@@ -348,7 +348,7 @@ async function getLoginCredentialsFromBrowser() {
     }
 }
 
-async function getLoginCredentialsFromSCRAMKeys() {
+async function getLoginCredentialsFromStorage() {
     const jid = localStorage.getItem("conversejs-session-jid");
     if (!jid) return null;
 
@@ -356,7 +356,14 @@ async function getLoginCredentialsFromSCRAMKeys() {
 
     const login_info = await savedLoginInfo(jid);
     const scram_keys = login_info.get("scram_keys");
-    return scram_keys ? { jid, password: scram_keys } : null;
+    const scram_keys = login_info.get("fast");
+    if (scram_keys) {
+        return { jid, password: scram_keys }
+    }
+    if (fast) {
+        return { jid, password: fast }
+    }
+    return null
 }
 
 /**
@@ -393,8 +400,13 @@ export async function attemptNonPreboundSession(credentials, automatic) {
             return connect();
         }
 
-        if (api.settings.get("reuse_scram_keys")) {
-            const credentials = await getLoginCredentialsFromSCRAMKeys();
+        if (api.settings.get("reuse_keys")) {
+	    // XXX if connecting with FAST, we need to present the same user-agent and client-id as before
+	    //     This is currently implemented by storing the client ID as part of the fast keys
+	    //     and having Strophe generate it if unset.
+            //     but it makes more sense for the client, Converse, to handle that.
+	    //     and it should probably coordinate with the OMEMO plugin.
+            const credentials = await getLoginCredentialsFromStorage();
             if (credentials) return connect(credentials);
         }
 
@@ -479,8 +491,9 @@ async function connect(credentials) {
 
         let callback;
         // Save the SCRAM data if we're not already logged in with SCRAM
-        if (_converse.state.config.get("trusted") && jid && api.settings.get("reuse_scram_keys") && !password?.ck) {
-            // Store scram keys in scram storage
+        if (_converse.state.config.get("trusted") && jid && api.settings.get("reuse_keys") && !password?.ck) {
+            // Store scram/fast keys in storage
+            // XXX seems like we could move the *loading* of keys from storage here, since login_info contains them
             const login_info = await savedLoginInfo(jid);
             callback =
                 /**
@@ -488,11 +501,13 @@ async function connect(credentials) {
                  * @param {string} message
                  */
                 (status, message) => {
-                    const { scram_keys } = connection;
+                    const { scram_keys, fast } = connection;
                     if (scram_keys) login_info.save({ scram_keys });
+                    if (fast) login_info.save({ fast });
                     connection.onConnectStatusChanged(status, message);
                 };
         }
+
         connection.connect(jid, password, callback);
     }
 }
